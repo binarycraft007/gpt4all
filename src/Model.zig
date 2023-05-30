@@ -10,10 +10,8 @@ recalculate_fn: *const fn (is_recalculating: bool) callconv(.C) bool,
 
 const Model = @This();
 
-const PromptOption = struct {
-    prompt: []const u8,
-    m: ?*anyopaque,
-    result: []u8,
+const PredictOptions = struct {
+    text: []const u8,
     ctx: c.llmodel_prompt_context = .{
         .logits = null,
         .logits_size = 0,
@@ -68,6 +66,21 @@ pub fn init(options: InitOptions) !Model {
         .response_fn = options.response_fn,
         .recalculate_fn = options.recalculate_fn,
     };
+}
+
+pub fn predict(model: *Model, options: PredictOptions) void {
+    var ctx = @ptrCast(c.llmodel_model, model.state);
+    c.llmodel_prompt(
+        ctx,
+        options.text.ptr,
+        model.prompt_fn,
+        model.response_fn,
+        model.recalculate_fn,
+        @intToPtr(
+            [*c]c.llmodel_prompt_context,
+            @ptrToInt(&options.ctx),
+        ),
+    );
 }
 
 pub fn deinit(model: *Model) void {

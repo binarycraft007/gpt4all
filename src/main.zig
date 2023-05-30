@@ -10,6 +10,11 @@ pub fn main() !void {
         .recalculate_fn = recalculateCallback,
     });
     defer model.deinit();
+
+    while (true) {
+        // TODO get user input
+        model.predict(.{ .text = "123456" });
+    }
 }
 
 fn promptCallback(_: i32) callconv(.C) bool {
