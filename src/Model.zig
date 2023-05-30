@@ -1,6 +1,12 @@
 const c = @import("c.zig");
 
 state: ?*anyopaque,
+prompt_fn: *const fn (token_id: i32) callconv(.C) bool,
+response_fn: *const fn (
+    token_id: i32,
+    response: [*c]const u8,
+) callconv(.C) bool,
+recalculate_fn: *const fn (is_recalculating: bool) callconv(.C) bool,
 
 const Model = @This();
 
@@ -8,7 +14,7 @@ const PromptOption = struct {
     prompt: []const u8,
     m: ?*anyopaque,
     result: []u8,
-    prompt: c.llmodel_prompt_context = .{
+    ctx: c.llmodel_prompt_context = .{
         .logits = null,
         .logits_size = 0,
         .tokens = null,
@@ -34,9 +40,15 @@ const InitOptions = struct {
         gptj,
         mpt,
     },
+    prompt_fn: *const fn (token_id: i32) callconv(.C) bool,
+    response_fn: *const fn (
+        token_id: i32,
+        response: [*c]const u8,
+    ) callconv(.C) bool,
+    recalculate_fn: *const fn (is_recalculating: bool) callconv(.C) bool,
 };
 
-pub fn init(options: InitOptions) Model {
+pub fn init(options: InitOptions) !Model {
     var gptj = blk: {
         switch (options.mtype) {
             .mpt => break :blk c.llmodel_mpt_create(),
@@ -47,10 +59,15 @@ pub fn init(options: InitOptions) Model {
 
     c.llmodel_setThreadCount(gptj, options.threads);
     if (!c.llmodel_loadModel(gptj, options.path)) {
-        return .{ .state = null };
+        return error.LoadModelFailed;
     }
 
-    return .{ .state = gptj };
+    return .{
+        .state = gptj,
+        .prompt_fn = options.prompt_fn,
+        .response_fn = options.response_fn,
+        .recalculate_fn = options.recalculate_fn,
+    };
 }
 
 pub fn deinit(model: *Model) void {
