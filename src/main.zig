@@ -1,5 +1,10 @@
-const gpt4all = @import("gpt4all.zig");
+const Model = @import("Model.zig");
 
 pub fn main() void {
-    _ = gpt4all.load_mpt_model("test.model", 3);
+    var model = Model.init(.{
+        .mtype = .gptj,
+        .path = "test.model",
+        .threads = 3,
+    });
+    defer model.deinit();
 }
