@@ -1,16 +1,16 @@
+const std = @import("std");
 const c = @import("c.zig");
 
 state: ?*anyopaque,
-prompt_fn: *const fn (token_id: i32) callconv(.C) bool,
 response_fn: *const fn (
     token_id: i32,
     response: [*c]const u8,
 ) callconv(.C) bool,
-recalculate_fn: *const fn (is_recalculating: bool) callconv(.C) bool,
 
 const Model = @This();
 
 const PredictOptions = struct {
+    allocator: std.mem.Allocator,
     text: []const u8,
     ctx: c.llmodel_prompt_context = .{
         .logits = null,
@@ -19,14 +19,14 @@ const PredictOptions = struct {
         .tokens_size = 0,
         .n_past = 0,
         .n_ctx = 1024,
-        .n_predict = 50,
+        .n_predict = 200,
         .top_k = 10,
         .top_p = 0.9,
-        .temp = 1.0,
+        .temp = 0.96,
         .n_batch = 1,
         .repeat_penalty = 1.2,
         .repeat_last_n = 10,
-        .context_erase = 0.5,
+        .context_erase = 0.55,
     },
 };
 
@@ -38,12 +38,10 @@ const InitOptions = struct {
         gptj,
         mpt,
     },
-    prompt_fn: *const fn (token_id: i32) callconv(.C) bool,
     response_fn: *const fn (
         token_id: i32,
         response: [*c]const u8,
     ) callconv(.C) bool,
-    recalculate_fn: *const fn (is_recalculating: bool) callconv(.C) bool,
 };
 
 pub fn init(options: InitOptions) !Model {
@@ -62,25 +60,40 @@ pub fn init(options: InitOptions) !Model {
 
     return .{
         .state = gptj,
-        .prompt_fn = options.prompt_fn,
         .response_fn = options.response_fn,
-        .recalculate_fn = options.recalculate_fn,
     };
 }
 
-pub fn predict(model: *Model, options: PredictOptions) void {
+pub fn predict(model: *Model, options: PredictOptions) ![]u8 {
+    var result = std.ArrayList(u8).init(options.allocator);
     var ctx = @ptrCast(c.llmodel_model, model.state);
+
+    //if (options.ctx.n_predict == 0) {
+    //    options.ctx.n_predict = 99999999;
+    //}
+
+    const callbacks = struct {
+        fn promptFn(_: i32) callconv(.C) bool {
+            return true;
+        }
+        fn recalculateFn(recalculate: bool) callconv(.C) bool {
+            return recalculate;
+        }
+    };
+
     c.llmodel_prompt(
         ctx,
         options.text.ptr,
-        model.prompt_fn,
+        callbacks.promptFn,
         model.response_fn,
-        model.recalculate_fn,
+        callbacks.recalculateFn,
         @intToPtr(
             [*c]c.llmodel_prompt_context,
             @ptrToInt(&options.ctx),
         ),
     );
+
+    return try result.toOwnedSlice();
 }
 
 pub fn deinit(model: *Model) void {
