@@ -52,12 +52,66 @@ pub const __builtin_assume = @import("std").zig.c_builtins.__builtin_assume;
 pub const __builtin_unreachable = @import("std").zig.c_builtins.__builtin_unreachable;
 pub const __builtin_constant_p = @import("std").zig.c_builtins.__builtin_constant_p;
 pub const __builtin_mul_overflow = @import("std").zig.c_builtins.__builtin_mul_overflow;
-pub extern fn load_mpt_model(fname: [*c]const u8, n_threads: c_int) ?*anyopaque;
-pub extern fn load_llama_model(fname: [*c]const u8, n_threads: c_int) ?*anyopaque;
-pub extern fn load_gptj_model(fname: [*c]const u8, n_threads: c_int) ?*anyopaque;
-pub extern fn gptj_model_prompt(prompt: [*c]const u8, m: ?*anyopaque, result: [*c]u8, repeat_last_n: c_int, repeat_penalty: f32, n_ctx: c_int, tokens: c_int, top_k: c_int, top_p: f32, temp: f32, n_batch: c_int, ctx_erase: f32) void;
-pub extern fn gptj_free_model(state_ptr: ?*anyopaque) void;
-pub extern fn getTokenCallback(?*anyopaque, [*c]u8) u8;
+pub const int_least64_t = i64;
+pub const uint_least64_t = u64;
+pub const int_fast64_t = i64;
+pub const uint_fast64_t = u64;
+pub const int_least32_t = i32;
+pub const uint_least32_t = u32;
+pub const int_fast32_t = i32;
+pub const uint_fast32_t = u32;
+pub const int_least16_t = i16;
+pub const uint_least16_t = u16;
+pub const int_fast16_t = i16;
+pub const uint_fast16_t = u16;
+pub const int_least8_t = i8;
+pub const uint_least8_t = u8;
+pub const int_fast8_t = i8;
+pub const uint_fast8_t = u8;
+pub const intmax_t = c_long;
+pub const uintmax_t = c_ulong;
+pub const ptrdiff_t = c_long;
+pub const wchar_t = c_int;
+pub const max_align_t = extern struct {
+    __clang_max_align_nonce1: c_longlong align(8),
+    __clang_max_align_nonce2: c_longdouble align(16),
+};
+pub const llmodel_model = ?*anyopaque;
+pub const llmodel_prompt_context = extern struct {
+    logits: [*c]f32,
+    logits_size: usize,
+    tokens: [*c]i32,
+    tokens_size: usize,
+    n_past: i32,
+    n_ctx: i32,
+    n_predict: i32,
+    top_k: i32,
+    top_p: f32,
+    temp: f32,
+    n_batch: i32,
+    repeat_penalty: f32,
+    repeat_last_n: i32,
+    context_erase: f32,
+};
+pub const llmodel_prompt_callback = ?*const fn (i32) callconv(.C) bool;
+pub const llmodel_response_callback = ?*const fn (i32, [*c]const u8) callconv(.C) bool;
+pub const llmodel_recalculate_callback = ?*const fn (bool) callconv(.C) bool;
+pub extern fn llmodel_gptj_create(...) llmodel_model;
+pub extern fn llmodel_gptj_destroy(gptj: llmodel_model) void;
+pub extern fn llmodel_mpt_create(...) llmodel_model;
+pub extern fn llmodel_mpt_destroy(mpt: llmodel_model) void;
+pub extern fn llmodel_llama_create(...) llmodel_model;
+pub extern fn llmodel_llama_destroy(llama: llmodel_model) void;
+pub extern fn llmodel_model_create(model_path: [*c]const u8) llmodel_model;
+pub extern fn llmodel_model_destroy(model: llmodel_model) void;
+pub extern fn llmodel_loadModel(model: llmodel_model, model_path: [*c]const u8) bool;
+pub extern fn llmodel_isModelLoaded(model: llmodel_model) bool;
+pub extern fn llmodel_get_state_size(model: llmodel_model) u64;
+pub extern fn llmodel_save_state_data(model: llmodel_model, dest: [*c]u8) u64;
+pub extern fn llmodel_restore_state_data(model: llmodel_model, src: [*c]const u8) u64;
+pub extern fn llmodel_prompt(model: llmodel_model, prompt: [*c]const u8, prompt_callback: llmodel_prompt_callback, response_callback: llmodel_response_callback, recalculate_callback: llmodel_recalculate_callback, ctx: [*c]llmodel_prompt_context) void;
+pub extern fn llmodel_setThreadCount(model: llmodel_model, n_threads: i32) void;
+pub extern fn llmodel_threadCount(model: llmodel_model) i32;
 pub const __INTMAX_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `L`"); // (no file):80:9
 pub const __UINTMAX_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `UL`"); // (no file):86:9
 pub const __FLT16_DENORM_MIN__ = @compileError("unable to translate C expr: unexpected token 'IntegerLiteral'"); // (no file):109:9
@@ -69,6 +123,15 @@ pub const __UINT32_C_SUFFIX__ = @compileError("unable to translate macro: undefi
 pub const __UINT64_C_SUFFIX__ = @compileError("unable to translate macro: undefined identifier `UL`"); // (no file):213:9
 pub const __seg_gs = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // (no file):343:9
 pub const __seg_fs = @compileError("unable to translate macro: undefined identifier `__attribute__`"); // (no file):344:9
+pub const __stdint_join3 = @compileError("unable to translate C expr: unexpected token '##'"); // /usr/lib/zig/lib/include/stdint.h:287:9
+pub const __int_c_join = @compileError("unable to translate C expr: unexpected token '##'"); // /usr/lib/zig/lib/include/stdint.h:324:9
+pub const __uint_c = @compileError("unable to translate macro: undefined identifier `U`"); // /usr/lib/zig/lib/include/stdint.h:326:9
+pub const __INTN_MIN = @compileError("unable to translate macro: undefined identifier `INT`"); // /usr/lib/zig/lib/include/stdint.h:894:10
+pub const __INTN_MAX = @compileError("unable to translate macro: undefined identifier `INT`"); // /usr/lib/zig/lib/include/stdint.h:895:10
+pub const __UINTN_MAX = @compileError("unable to translate macro: undefined identifier `UINT`"); // /usr/lib/zig/lib/include/stdint.h:896:9
+pub const __INTN_C = @compileError("unable to translate macro: undefined identifier `INT`"); // /usr/lib/zig/lib/include/stdint.h:897:10
+pub const __UINTN_C = @compileError("unable to translate macro: undefined identifier `UINT`"); // /usr/lib/zig/lib/include/stdint.h:898:9
+pub const offsetof = @compileError("unable to translate macro: undefined identifier `__builtin_offsetof`"); // /usr/lib/zig/lib/include/stddef.h:111:9
 pub const __llvm__ = @as(c_int, 1);
 pub const __clang__ = @as(c_int, 1);
 pub const __clang_major__ = @as(c_int, 16);
@@ -479,6 +542,132 @@ pub const __STDC_UTF_16__ = @as(c_int, 1);
 pub const __STDC_UTF_32__ = @as(c_int, 1);
 pub const _DEBUG = @as(c_int, 1);
 pub const __GCC_HAVE_DWARF2_CFI_ASM = @as(c_int, 1);
+pub const LLMODEL_C_H = "";
+pub const __CLANG_STDINT_H = "";
+pub const __int_least64_t = i64;
+pub const __uint_least64_t = u64;
+pub const __int_least32_t = i64;
+pub const __uint_least32_t = u64;
+pub const __int_least16_t = i64;
+pub const __uint_least16_t = u64;
+pub const __int_least8_t = i64;
+pub const __uint_least8_t = u64;
+pub const __uint32_t_defined = "";
+pub const __int8_t_defined = "";
+pub const __intptr_t_defined = "";
+pub const _INTPTR_T = "";
+pub const _UINTPTR_T = "";
+pub inline fn __int_c(v: anytype, suffix: anytype) @TypeOf(__int_c_join(v, suffix)) {
+    return __int_c_join(v, suffix);
+}
+pub const __int64_c_suffix = __INT64_C_SUFFIX__;
+pub const __int32_c_suffix = __INT64_C_SUFFIX__;
+pub const __int16_c_suffix = __INT64_C_SUFFIX__;
+pub const __int8_c_suffix = __INT64_C_SUFFIX__;
+pub inline fn INT64_C(v: anytype) @TypeOf(__int_c(v, __int64_c_suffix)) {
+    return __int_c(v, __int64_c_suffix);
+}
+pub inline fn UINT64_C(v: anytype) @TypeOf(__uint_c(v, __int64_c_suffix)) {
+    return __uint_c(v, __int64_c_suffix);
+}
+pub inline fn INT32_C(v: anytype) @TypeOf(__int_c(v, __int32_c_suffix)) {
+    return __int_c(v, __int32_c_suffix);
+}
+pub inline fn UINT32_C(v: anytype) @TypeOf(__uint_c(v, __int32_c_suffix)) {
+    return __uint_c(v, __int32_c_suffix);
+}
+pub inline fn INT16_C(v: anytype) @TypeOf(__int_c(v, __int16_c_suffix)) {
+    return __int_c(v, __int16_c_suffix);
+}
+pub inline fn UINT16_C(v: anytype) @TypeOf(__uint_c(v, __int16_c_suffix)) {
+    return __uint_c(v, __int16_c_suffix);
+}
+pub inline fn INT8_C(v: anytype) @TypeOf(__int_c(v, __int8_c_suffix)) {
+    return __int_c(v, __int8_c_suffix);
+}
+pub inline fn UINT8_C(v: anytype) @TypeOf(__uint_c(v, __int8_c_suffix)) {
+    return __uint_c(v, __int8_c_suffix);
+}
+pub const INT64_MAX = INT64_C(@import("std").zig.c_translation.promoteIntLiteral(c_int, 9223372036854775807, .decimal));
+pub const INT64_MIN = -INT64_C(@import("std").zig.c_translation.promoteIntLiteral(c_int, 9223372036854775807, .decimal)) - @as(c_int, 1);
+pub const UINT64_MAX = UINT64_C(@import("std").zig.c_translation.promoteIntLiteral(c_int, 18446744073709551615, .decimal));
+pub const __INT_LEAST64_MIN = INT64_MIN;
+pub const __INT_LEAST64_MAX = INT64_MAX;
+pub const __UINT_LEAST64_MAX = UINT64_MAX;
+pub const __INT_LEAST32_MIN = INT64_MIN;
+pub const __INT_LEAST32_MAX = INT64_MAX;
+pub const __UINT_LEAST32_MAX = UINT64_MAX;
+pub const __INT_LEAST16_MIN = INT64_MIN;
+pub const __INT_LEAST16_MAX = INT64_MAX;
+pub const __UINT_LEAST16_MAX = UINT64_MAX;
+pub const __INT_LEAST8_MIN = INT64_MIN;
+pub const __INT_LEAST8_MAX = INT64_MAX;
+pub const __UINT_LEAST8_MAX = UINT64_MAX;
+pub const INT_LEAST64_MIN = __INT_LEAST64_MIN;
+pub const INT_LEAST64_MAX = __INT_LEAST64_MAX;
+pub const UINT_LEAST64_MAX = __UINT_LEAST64_MAX;
+pub const INT_FAST64_MIN = __INT_LEAST64_MIN;
+pub const INT_FAST64_MAX = __INT_LEAST64_MAX;
+pub const UINT_FAST64_MAX = __UINT_LEAST64_MAX;
+pub const INT32_MAX = INT32_C(@import("std").zig.c_translation.promoteIntLiteral(c_int, 2147483647, .decimal));
+pub const INT32_MIN = -INT32_C(@import("std").zig.c_translation.promoteIntLiteral(c_int, 2147483647, .decimal)) - @as(c_int, 1);
+pub const UINT32_MAX = UINT32_C(@import("std").zig.c_translation.promoteIntLiteral(c_int, 4294967295, .decimal));
+pub const INT_LEAST32_MIN = __INT_LEAST32_MIN;
+pub const INT_LEAST32_MAX = __INT_LEAST32_MAX;
+pub const UINT_LEAST32_MAX = __UINT_LEAST32_MAX;
+pub const INT_FAST32_MIN = __INT_LEAST32_MIN;
+pub const INT_FAST32_MAX = __INT_LEAST32_MAX;
+pub const UINT_FAST32_MAX = __UINT_LEAST32_MAX;
+pub const INT16_MAX = INT16_C(@as(c_int, 32767));
+pub const INT16_MIN = -INT16_C(@as(c_int, 32767)) - @as(c_int, 1);
+pub const UINT16_MAX = UINT16_C(@import("std").zig.c_translation.promoteIntLiteral(c_int, 65535, .decimal));
+pub const INT_LEAST16_MIN = __INT_LEAST16_MIN;
+pub const INT_LEAST16_MAX = __INT_LEAST16_MAX;
+pub const UINT_LEAST16_MAX = __UINT_LEAST16_MAX;
+pub const INT_FAST16_MIN = __INT_LEAST16_MIN;
+pub const INT_FAST16_MAX = __INT_LEAST16_MAX;
+pub const UINT_FAST16_MAX = __UINT_LEAST16_MAX;
+pub const INT8_MAX = INT8_C(@as(c_int, 127));
+pub const INT8_MIN = -INT8_C(@as(c_int, 127)) - @as(c_int, 1);
+pub const UINT8_MAX = UINT8_C(@as(c_int, 255));
+pub const INT_LEAST8_MIN = __INT_LEAST8_MIN;
+pub const INT_LEAST8_MAX = __INT_LEAST8_MAX;
+pub const UINT_LEAST8_MAX = __UINT_LEAST8_MAX;
+pub const INT_FAST8_MIN = __INT_LEAST8_MIN;
+pub const INT_FAST8_MAX = __INT_LEAST8_MAX;
+pub const UINT_FAST8_MAX = __UINT_LEAST8_MAX;
+pub const INTPTR_MIN = -__INTPTR_MAX__ - @as(c_int, 1);
+pub const INTPTR_MAX = __INTPTR_MAX__;
+pub const UINTPTR_MAX = __UINTPTR_MAX__;
+pub const PTRDIFF_MIN = -__PTRDIFF_MAX__ - @as(c_int, 1);
+pub const PTRDIFF_MAX = __PTRDIFF_MAX__;
+pub const SIZE_MAX = __SIZE_MAX__;
+pub const INTMAX_MIN = -__INTMAX_MAX__ - @as(c_int, 1);
+pub const INTMAX_MAX = __INTMAX_MAX__;
+pub const UINTMAX_MAX = __UINTMAX_MAX__;
+pub const SIG_ATOMIC_MIN = __INTN_MIN(__SIG_ATOMIC_WIDTH__);
+pub const SIG_ATOMIC_MAX = __INTN_MAX(__SIG_ATOMIC_WIDTH__);
+pub const WINT_MIN = __UINTN_C(__WINT_WIDTH__, @as(c_int, 0));
+pub const WINT_MAX = __UINTN_MAX(__WINT_WIDTH__);
+pub const WCHAR_MAX = __WCHAR_MAX__;
+pub const WCHAR_MIN = __INTN_MIN(__WCHAR_WIDTH__);
+pub inline fn INTMAX_C(v: anytype) @TypeOf(__int_c(v, __INTMAX_C_SUFFIX__)) {
+    return __int_c(v, __INTMAX_C_SUFFIX__);
+}
+pub inline fn UINTMAX_C(v: anytype) @TypeOf(__int_c(v, __UINTMAX_C_SUFFIX__)) {
+    return __int_c(v, __UINTMAX_C_SUFFIX__);
+}
+pub const __STDDEF_H = "";
+pub const __need_ptrdiff_t = "";
+pub const __need_size_t = "";
+pub const __need_wchar_t = "";
+pub const __need_NULL = "";
+pub const __need_STDDEF_H_misc = "";
+pub const _PTRDIFF_T = "";
+pub const _SIZE_T = "";
+pub const _WCHAR_T = "";
+pub const NULL = @import("std").zig.c_translation.cast(?*anyopaque, @as(c_int, 0));
+pub const __CLANG_MAX_ALIGN_T_DEFINED = "";
 pub const __STDBOOL_H = "";
 pub const __bool_true_false_are_defined = @as(c_int, 1);
 pub const @"bool" = bool;

@@ -2,8 +2,9 @@ const std = @import("std");
 
 const gpt4all_src = [_][]const u8{
     "lib/gptj.cpp",
-    "lib/binding.cpp",
     "lib/llamamodel.cpp",
+    "lib/llama.cpp/ggml.c",
+    "lib/llama.cpp/llama.cpp",
     "lib/llama.cpp/examples/common.cpp",
     "lib/llmodel_c.cpp",
     "lib/mpt.cpp",
@@ -45,6 +46,18 @@ pub fn build(b: *std.Build) void {
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
     b.installArtifact(lib);
+
+    const exe = b.addExecutable(.{
+        .name = "gpt4all",
+        // In this case the main source file is merely a path, however, in more
+        // complicated build scripts, this could be a generated file.
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+
+    exe.linkLibrary(lib);
+    b.installArtifact(exe);
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
