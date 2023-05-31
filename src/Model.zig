@@ -1,5 +1,6 @@
 const std = @import("std");
 const log = std.log;
+const addNullByte = std.cstr.addNullByte;
 const c = @import("c.zig");
 
 state: ?*anyopaque,
@@ -83,10 +84,13 @@ pub fn predict(model: *Model, options: PredictOptions) ![]u8 {
     callbacks.res = &result;
     callbacks.mm = model;
 
+    var prompt = try addNullByte(options.allocator, options.text);
+    defer options.allocator.free(prompt);
+
     const PromptContext = [*c]c.llmodel_prompt_context;
     c.llmodel_prompt(
         ctx,
-        options.text.ptr,
+        prompt,
         callbacks.promptFn,
         callbacks.respFn,
         callbacks.recalculateFn,
