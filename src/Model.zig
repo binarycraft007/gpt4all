@@ -1,11 +1,9 @@
 const std = @import("std");
+const log = std.log;
 const c = @import("c.zig");
 
 state: ?*anyopaque,
-response_fn: *const fn (
-    token_id: i32,
-    response: [*c]const u8,
-) callconv(.C) bool,
+response_fn: *const fn (response: []const u8) bool,
 
 const Model = @This();
 
@@ -38,10 +36,7 @@ const InitOptions = struct {
         gptj,
         mpt,
     },
-    response_fn: *const fn (
-        token_id: i32,
-        response: [*c]const u8,
-    ) callconv(.C) bool,
+    response_fn: *const fn (response: []const u8) bool,
 };
 
 pub fn init(options: InitOptions) !Model {
@@ -68,29 +63,34 @@ pub fn predict(model: *Model, options: PredictOptions) ![]u8 {
     var result = std.ArrayList(u8).init(options.allocator);
     var ctx = @ptrCast(c.llmodel_model, model.state);
 
-    //if (options.ctx.n_predict == 0) {
-    //    options.ctx.n_predict = 99999999;
-    //}
-
     const callbacks = struct {
+        pub var mm: *Model = undefined;
+        pub var res: *std.ArrayList(u8) = undefined;
+
         fn promptFn(_: i32) callconv(.C) bool {
             return true;
         }
         fn recalculateFn(recalculate: bool) callconv(.C) bool {
             return recalculate;
         }
+        fn respFn(_: i32, resp: [*c]const u8) callconv(.C) bool {
+            res.appendSlice(std.mem.span(resp)) catch |err| {
+                log.err("resp err: {s}", .{@errorName(err)});
+            };
+            return mm.response_fn(std.mem.span(resp));
+        }
     };
+    callbacks.res = &result;
+    callbacks.mm = model;
 
+    const PromptContext = [*c]c.llmodel_prompt_context;
     c.llmodel_prompt(
         ctx,
         options.text.ptr,
         callbacks.promptFn,
-        model.response_fn,
+        callbacks.respFn,
         callbacks.recalculateFn,
-        @intToPtr(
-            [*c]c.llmodel_prompt_context,
-            @ptrToInt(&options.ctx),
-        ),
+        @intToPtr(PromptContext, @ptrToInt(&options.ctx)),
     );
 
     return try result.toOwnedSlice();

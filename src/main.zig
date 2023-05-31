@@ -25,8 +25,7 @@ pub fn main() !void {
     }
 }
 
-fn responseCallback(token_id: i32, response: [*c]const u8) callconv(.C) bool {
-    _ = token_id;
-    _ = response;
+fn responseCallback(resp: []const u8) bool {
+    std.debug.print("{s}", .{resp});
     return true;
 }
