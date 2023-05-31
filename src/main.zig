@@ -8,8 +8,8 @@ pub fn main() !void {
     defer arena.deinit();
 
     var model = try Model.init(.{
-        .mtype = .mpt,
-        .path = "ggml-mpt-7b-instruct.bin",
+        .mtype = .gptj,
+        .path = "ggml-gpt4all-j-v1.3-groovy.bin",
         .threads = 4,
         .response_fn = struct {
             fn responseCallback(resp: []const u8) bool {
@@ -24,7 +24,7 @@ pub fn main() !void {
         var input = std.ArrayList(u8).init(arena.allocator());
         defer input.deinit();
 
-        std.debug.print(">>> ", .{});
+        std.debug.print("> Question:\n", .{});
         var stdin = io.getStdIn().reader();
         while (true) {
             var buf: [4096]u8 = undefined;
@@ -39,10 +39,12 @@ pub fn main() !void {
             }
         }
 
+        std.debug.print("> Answer:\n", .{});
         var result = try model.predict(.{
             .text = input.items,
             .allocator = arena.allocator(),
         });
         defer arena.allocator().free(result);
+        std.debug.print("\n", .{});
     }
 }
